@@ -1,0 +1,30 @@
+package com.nbsaas.codegen.annotation;
+
+public enum InputType {
+    text,
+    email,
+    hidden,
+    password,
+    time,
+    date,
+    image,
+    select,
+    textarea,
+    dictionary,
+    map,
+    richText,
+    treeView,
+    el_cascader,
+    el_switch,
+    el_slider,
+    el_rate,
+    el_radio_group,
+    el_checkbox_group,
+    el_input_number,
+    el_upload,
+    el_color_picker,
+    el_transfer,
+    el_time_select,
+    el_date_picker,
+    el_date_time_picker;
+}

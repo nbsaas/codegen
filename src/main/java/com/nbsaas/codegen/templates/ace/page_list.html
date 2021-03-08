@@ -1,0 +1,120 @@
+[#include "/admin/common/layouts.html"]
+[@layout menus="${menus!''}" /]
+[#macro title]
+数据列表
+[/#macro]
+[#macro table]
+<div class="table-responsive">
+    <table id="listTable" class="table table-striped table-bordered table-hover">
+        <tr>
+            <td class="hidden-sm hidden-xs"><input type="checkbox" id="selectAll"></td>
+            <td class="col-xs-6">名称</td>
+            <td class="col-xs-2 text-center">添加时间</td>
+            <td class="col-xs-2 text-center">更新时间</td>
+            <td class="col-xs-2 text-center  hidden-sm hidden-xs">操作</td>
+        </tr>
+        [#if list??]
+        [#list list as item]
+        <tr id="trr<#noparse>${item.id!''}</#noparse>">
+            <td class="hidden-sm hidden-xs"><input type="checkbox" value="<#noparse>${item.id}</#noparse>" name="ids"></td>
+            <td>
+                <#noparse>${item.title!""}</#noparse>
+            </td>
+            <td class="text-center">
+                <#noparse>${item.addDate!""}</#noparse>
+            </td>
+            <td class="text-center">
+                <#noparse>${item.lastDate!""}</#noparse>
+            </td>
+
+            <td class="text-center  hidden-sm hidden-xs">
+                <div style="display: inline-block;">
+                    <a class="btn btn-xs btn-info"
+                       href="<#noparse>${siteurl}admin/</#noparse>${config_entity}/view_edit.htm?id=<#noparse>${item.id!''}</#noparse>&pageNumber=<#noparse>${page.pageNumber}</#noparse>">
+                        <i class="icon-trash bigger-120">更新</i>
+                    </a>
+                    <a class="btn btn-xs btn-danger" onclick="return confirm('删除后无法恢复,确定要删除吗')"
+                       href="<#noparse>${siteurl}admin/</#noparse>${config_entity}/model_delete.htm?id=<#noparse>${item.id!''}</#noparse>&pageNumber=<#noparse>${page.pageNumber}</#noparse>">
+                        <i class="icon-trash bigger-120">删除</i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+        [/#list]
+        [/#if]
+    </table>
+</div>
+[/#macro]
+
+[#macro searchitems]
+[@searchitem name="title" value ="标题"/]
+[@searchitem name="content" value ="内容"/]
+[/#macro]
+
+[#macro scripts]
+<!--js脚本位置  -->
+<script type="text/javascript">
+</script>
+[/#macro]
+
+[#macro links]
+<!--脚步及其css 导入路径  -->
+
+[/#macro]
+[#macro buttons]
+<!--脚步及其css 导入路径  -->
+<a class="btn btn-primary btn-sm" href="<#noparse>${siteurl}admin/</#noparse>${config_entity}/view_add.htm">
+	<i class="ace-icon fa fa-pencil align-top bigger-125"></i>添加
+</a> 
+<a class="disabled" id="deleteButton" href="#">
+	<button   class="btn btn-danger btn-sm">
+	<i class="ace-icon fa fa-trash-o align-top bigger-125"></i>	批量删除
+	</button>
+</a>
+[/#macro]
+[#macro formaction]
+<#noparse>${siteurl}</#noparse>admin/${config_entity}/view_list.htm
+[/#macro]
+[#macro widgetbox]
+
+							<div class="widget-box">
+
+
+								<div class="widget-body">
+									<div class="widget-main">
+										<div class="row">
+											<div class="col-sm-3 col-md-4 col-lg-3 hidden-sm hidden-xs">
+											   [@buttons /]
+												
+											</div>
+											<div class="col-sm-9 col-md-8 col-lg-9  form-inline">
+												<div class="input-group  hidden-sm hidden-xs">
+													<div class="btn-group">
+														<button class="btn btn-primary btn-white dropdown-toggle"
+															data-toggle="dropdown">
+															<span id="searchval">筛选 </span><i
+																class="ace-icon fa fa-angle-down icon-on-right"></i>
+														</button>
+
+														<ul id="searchPropertyOption" class="dropdown-menu ">
+														    [@searchitems /]
+														</ul>
+													</div>
+												</div>
+												<div class="input-group">
+
+													<input type="text" name="searchValue"   value="${(page.searchValue)!''}"  placeholder="关键词"
+														class="form-control search-query"> <span
+														class="input-group-btn">
+														<button class="btn btn-purple btn-sm" type="submit">
+															搜索 <i
+																class="ace-icon fa fa-search icon-on-right bigger-110"></i>
+														</button>
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+[/#macro]

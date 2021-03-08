@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>${bean.list!"列表"}</title>
+	[#include "/admin/common/commons.html"]
+	[#include "/tenant/common/site.html"]
+	[@baseHead /]
+</head>
+
+<body class="hold-transition skin-blue sidebar-mini">
+	<!-- Site wrapper -->
+	<div class="wrapper">
+
+		<header class="main-header">
+			<!-- Header Navbar: style can be found in header.less -->
+			[#include "/admin/common/nav.html"]
+		</header>
+
+		<!-- =============================================== -->
+
+		<!-- Left side column. contains the sidebar -->
+		<aside class="main-sidebar">
+			<!-- sidebar: style can be found in sidebar.less -->
+			<section class="sidebar">
+				[@user_panel /]
+				<!-- search form -->
+				[@sidebar_form /]
+				<!-- /.search form -->
+				<!-- sidebar menu: : style can be found in sidebar.less -->
+				<ul class="sidebar-menu" data-widget="tree">
+					<li class="header">主面板</li>
+					[@menustag id=1]
+					[#list list as item]
+					[@menu item "${menus!''}"]
+					[/@menu]
+					[/#list]
+					[/@menustag]
+				</ul>
+			</section>
+			<!-- /.sidebar -->
+		</aside>
+
+		<!-- =============================================== -->
+
+		<!-- Content Wrapper. Contains page content -->
+		<div class="content-wrapper" id="app"   v-cloak  >
+			<!-- Content Header (Page header) -->
+			<section class="content-header">
+				<!-- 导航 -->
+				<div class="navigation">
+					<i>首页</i> <span>${bean.list!"列表"}</span>
+				</div>
+			</section>
+			<!-- Main content -->
+			<section class="content">
+
+				<!-- Default box -->
+				<div v-if="modelType == 'list'">
+					<div class="search">
+						<el-form label-width="${bean.searchWidth!80}px">
+							<el-row>
+								<#if searchs??>
+									<#list searchs as item>
+										<el-col :span="6" style="padding: 0 8px;">
+											<el-form-item label="${item.title}">
+												<#if item.type='date'>
+												<el-date-picker value-format="yyyy-MM-dd" size="small" v-model="searchObject.${item.id!}" type="date" placeholder="选择日期">
+												</el-date-picker>
+												<#elseif item.type='select'>
+												<el-select size="small" style="width: 100%;"  v-model="searchObject.${item.id!}" filterable clearable
+														   placeholder="请选择">
+													<el-option v-for="item in ${item.id!}Options" :key="item.id"
+															   :label="item.name" :value="item.id">
+													</el-option>
+												</el-select>
+												<#elseif item.type='textarea'>
+												<el-input v-model="searchObject.${item.id!}" size="small" name="${item.id!}" type="textarea"></el-input>
+												<#else>
+												<el-input v-model="searchObject.${item.id!}" size="small" placeholder="${item.placeholder}" name="${item.id!}">
+												</el-input>
+											     </#if>
+											</el-form-item>
+										</el-col>
+									</#list>
+								</#if>
+
+								<el-col :span="${leftSize!'6'}" style="padding: 0 10px;margin-top: 5px;">
+									<el-row type="flex" justify="end">
+										<el-button size="small" type="primary" @click="search">搜索</el-button>
+										<el-button size="small" plain @click="clearData">清除条件</el-button>
+									</el-row>
+								</el-col>
+							</el-row>
+						</el-form>
+					</div>
+					<div class="data-content">
+						<div  class="tool-add">
+							<el-button type="primary" size="small" @click="addView">新增</el-button>
+						</div>
+
+						<el-table v-loading="loading" :data="tableData.list"  @cell-click="showView" @sort-change="changeTableSort" style="width: 100%;font-size: 12px;">
+							<#if bean.grids??>
+								<#list bean.grids as item>
+									<el-table-column label="${item.title}"
+
+													 prop="${item.id!}${item.extName!}"
+										<#if item.sort>sortable="custom" </#if>
+										<#if item.width?length lt 4 > width="${item.width!}"  </#if>
+									  >
+									</el-table-column>
+								</#list>
+							</#if>
+							<el-table-column width="160" align="center" fixed="right" label="操作">
+								<template slot-scope="scope">
+									<el-button type="primary" size="mini" @click="editView(scope.row.id)">编辑
+									</el-button>
+									<el-button type="danger" size="mini"  style="cursor: pointer;"
+										@click="deleteData(scope.row)">删除</el-button>
+								</template>
+							</el-table-column>
+						</el-table>
+
+						<div class="page">
+							<el-pagination background :current-page="searchObject.no" :page-sizes="[10, 20, 50, 100]"
+								:page-size="tableData.size" :pager-count="5"
+								layout="total, sizes, prev, pager, next, jumper" :page-count="tableData.totalPage"
+								:total="tableData.total" @size-change="sizeChange" @current-change="pageChange">
+							</el-pagination>
+						</div>
+		           </div>
+				</div>
+				<!-- 增加页面 -->
+				<div v-if="modelType == 'add'"  class="model-form">
+					<el-page-header @back="goBack" content="增加${bean.list!}">
+					</el-page-header>
+					<div class="model-content">
+					<el-form ref="ruleForm" :rules="rules" :model="form" label-width="160px" >
+						<el-row :gutter="10">
+							<#list bean.fields as item>
+								<el-col :span="12">
+									<el-form-item label="${item.title!}" size="mini" prop="${item.id!}">
+										<#if item.type='date'>
+										<el-date-picker v-model="form.${item.id!}" type="date"   value-format="yyyy-MM-dd"  placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_date_picker'>
+										<el-date-picker v-model="form.${item.id!}" type="date"  value-format="yyyy-MM-dd"  placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_date_time_picker'>
+										<el-date-picker v-model="form.${item.id!}" type="datetime" value-format="yyyy-MM-dd HH:mm" placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_time_select'>
+										<el-time-select
+												placeholder="选择时间"
+												v-model="form.${item.id!}"
+												:picker-options="{
+												  start: '08:30',
+												  step: '00:15',
+												  end: '18:30'
+												}">
+										</el-time-select>
+										<#elseif item.type='select'>
+											<el-select style="width: 100%;"  v-model="form.${item.id!}" filterable clearable
+													   placeholder="请选择">
+												<el-option v-for="item in ${item.option!}Options" :key="item.id"
+														   :label="item.name" :value="item.id">
+												</el-option>
+											</el-select>
+										<#elseif item.type='textarea'>
+											<el-input v-model="form.${item.id!}" name="${item.id!}" type="textarea"></el-input>
+										<#elseif item.type='el_input_number'>
+										   <el-input-number v-model="form.${item.id!}" name="${item.id!}" type="textarea" :min="0" :max="100"></el-input-number>
+										<#elseif item.type='el_cascader'>
+											<el-cascader
+													v-model="form.${item.id!}"
+													:options="options"
+													@change="handleChange"></el-cascader>
+										<#elseif item.type='el_switch'>
+											<el-switch
+													v-model="form.${item.id!}"
+													active-color="#13ce66"
+													inactive-color="#ff4949">
+											</el-switch>
+										<#elseif item.type='el_slider'>
+											<el-slider v-model="form.${item.id!}"></el-slider>
+										<#elseif item.type='el_rate'>
+											<el-rate v-model="form.${item.id!}"></el-rate>
+										<#elseif item.type='el_radio_group'>
+											<el-radio v-model="form.${item.id!}" label="1">备选项</el-radio>
+											<el-radio v-model="form.${item.id!}" label="2">备选项</el-radio>
+										<#elseif item.type='el_checkbox_group'>
+											<el-checkbox-group v-model="form.${item.id!}">
+												<el-checkbox label="复选框 A"></el-checkbox>
+												<el-checkbox label="复选框 B"></el-checkbox>
+												<el-checkbox label="复选框 C"></el-checkbox>
+											</el-checkbox-group>
+										<#elseif item.type='el_upload'>
+										    <avatar  v-model="form.${item.id!}"  ></avatar>
+										<#else>
+											<el-input v-model="form.${item.id!}" name="${item.id!}">
+											</el-input>
+										</#if>
+									</el-form-item>
+								</el-col>
+							</#list>
+						</el-row>
+						<el-row style="text-align: right;">
+							<el-button @click="resetForm('ruleForm')">重置</el-button>
+							<el-button type="primary" @click="add">确定</el-button>
+						</el-row>
+					</el-form>
+					</div>
+				</div>
+				<!-- 更新页面 -->
+				<div v-if="modelType == 'edit'" class="model-form">
+					<el-page-header @back="goBack" content="更新${bean.list!}">
+					</el-page-header>
+					<div class="model-content">
+					<el-form ref="form_edit" :rules="rules" :model="form_edit" label-width="160px" >
+						<el-row :gutter="10">
+							<#list bean.fields as item>
+								<el-col :span="12">
+									<el-form-item label="${item.title!}" size="mini" prop="${item.id!}">
+										<#if item.type='date'>
+										<el-date-picker v-model="form_edit.${item.id!}" type="date"   value-format="yyyy-MM-dd"  placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_date_picker'>
+										<el-date-picker v-model="form_edit.${item.id!}" type="date"  value-format="yyyy-MM-dd"  placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_date_time_picker'>
+										<el-date-picker v-model="form_edit.${item.id!}" type="datetime" value-format="yyyy-MM-dd HH:mm" placeholder="选择日期">
+										</el-date-picker>
+										<#elseif item.type='el_time_select'>
+										<el-time-select
+												placeholder="选择时间"
+												v-model="form_edit.${item.id!}"
+												:picker-options="{
+												  start: '08:30',
+												  step: '00:15',
+												  end: '18:30'
+												}">
+										</el-time-select>
+										<#elseif item.type='select'>
+										<el-select style="width: 100%;"  v-model="form_edit.${item.id!}" filterable clearable
+												   placeholder="请选择">
+											<el-option v-for="item in ${item.option!}Options" :key="item.id"
+													   :label="item.name" :value="item.id">
+											</el-option>
+										</el-select>
+										<#elseif item.type='textarea'>
+										<el-input v-model="form_edit.${item.id!}" name="${item.id!}" type="textarea"></el-input>
+										<#elseif item.type='el_input_number'>
+										<el-input-number v-model="form_edit.${item.id!}" name="${item.id!}" type="textarea" :min="0" :max="100"></el-input-number>
+										<#elseif item.type='el_cascader'>
+										<el-cascader
+												v-model="form_edit.${item.id!}"
+												:options="options"
+												@change="handleChange"></el-cascader>
+										<#elseif item.type='el_switch'>
+										<el-switch
+												v-model="form_edit.${item.id!}"
+												active-color="#13ce66"
+												inactive-color="#ff4949">
+										</el-switch>
+										<#elseif item.type='el_slider'>
+										<el-slider v-model="form_edit.${item.id!}"></el-slider>
+										<#elseif item.type='el_rate'>
+										<el-rate v-model="form_edit.${item.id!}"></el-rate>
+										<#elseif item.type='el_radio_group'>
+										<el-radio v-model="form_edit.${item.id!}" label="1">备选项</el-radio>
+										<el-radio v-model="form_edit.${item.id!}" label="2">备选项</el-radio>
+										<#elseif item.type='el_checkbox_group'>
+										<el-checkbox-group v-model="form_edit.${item.id!}">
+											<el-checkbox label="复选框 A"></el-checkbox>
+											<el-checkbox label="复选框 B"></el-checkbox>
+											<el-checkbox label="复选框 C"></el-checkbox>
+										</el-checkbox-group>
+										<#elseif item.type='el_upload'>
+										<avatar  v-model="form_edit.${item.id!}"  ></avatar>
+										<#else>
+										<el-input v-model="form_edit.${item.id!}" name="${item.id!}">
+										</el-input>
+									</#if>
+									</el-form-item>
+								</el-col>
+							</#list>
+						</el-row>
+						<el-row style="text-align: right;">
+							<el-button @click="cancelEdit">取消</el-button>
+							<el-button type="primary" @click="updateData">确定</el-button>
+						</el-row>
+					</el-form>
+					</div>
+				</div>
+				<div v-if="modelType == 'view'"  class="model-form">
+					<el-page-header @back="goBack" content="详情">
+					</el-page-header>
+					<div class="form-title">详细信息</div>
+					<el-form class="viewForm" label-width="${bean.viewWidth!80}px">
+						<#if bean.fields??>
+							<#list bean.fields as item>
+								<el-col :span="12">
+									<el-form-item label="${item.title}">
+										{{viewModel.${item.id!}${item.extName!}}}
+									</el-form-item>
+								</el-col>
+							</#list>
+						</#if>
+					</el-form>
+				</div>
+
+
+				<!-- /.box -->
+			</section>
+
+			<el-dialog title="提示" :visible.sync="dialogVisible" width="30%">
+				<span>确认要删除该条数据吗?</span>
+				<span slot="footer" class="dialog-footer">
+					<el-button @click="dialogVisible = false">取 消</el-button>
+					<el-button type="primary" @click="handleClose">确 定</el-button>
+				</span>
+			</el-dialog>
+			<!-- /.content -->
+		</div>
+		<!-- /.content-wrapper -->
+
+		[#include "/admin/common/footer.html"]
+
+		<!-- Control Sidebar -->
+		[#include "/admin/common/aside.html"]
+
+		<!-- /.control-sidebar -->
+		<!-- Add the sidebar's background. This div must be placed
+     immediately after the control sidebar -->
+		<div class="control-sidebar-bg"></div>
+	</div>
+	<!-- ./wrapper -->
+	[@baseScript /]
+	<script >
+		var config = {};
+		config.el = "#app";
+
+		config.methods = {};
+
+		[@configVue model="${config_entity}" /]
+
+        config.methods.beforeAddView=function(){
+			this.form = {
+				<#list bean.fields as item>
+				${item.id!}: ''<#sep>,
+				</#list>
+			};
+		}
+		config.methods.beforeAddData=function(){
+			console.info("before add");
+		}
+		config.methods.beforeUpdateData=function(){
+			console.info("before update");
+		}
+		config.methods.beforeEditView = function (res) {
+		   console.info("before beforeEditView");
+		}
+		config.methods.clearData = function () {
+			<#if searchs??>
+				<#list searchs as item>
+					this.searchObject.${item.id} = "";
+				</#list>
+			</#if >
+		}
+		config.mounted = function () {
+			this.getSearchList();
+			<#list bean.fields as item>
+            <#if item.option?length gt 2 >
+             this.load${item.id?cap_first}Options();
+            </#if>
+            </#list>
+		}
+         <#list bean.fields as item>
+         <#if item.option?length gt 2 >
+          config.methods.load${item.id?cap_first}Options= function(){
+                var param = {};
+				param.sortMethod = "asc";
+				param.sortField = "id";
+				param.level =2;
+				param.size =500;
+				$.post("<#noparse>${siteurl}</#noparse>tenantRest/${item.id?lower_case}/list.htm", param, function (result) {
+					if (result.code == 0) {
+						Vue.set(vm.$data, '${item.id}Options', result.list);
+					}
+				});
+          }
+
+         </#if>
+         </#list>
+		config.data = function () {
+				return {
+					searchObject: {
+						no: 1,
+						size: 10,
+						<#if searchs??>
+					    <#list searchs as item>
+						${item.id}:''<#sep>,
+						</#list>
+						</#if>
+					},
+					modelType:"list",
+					dialogVisible: false,
+					defaultProps: {
+						children: 'children',
+						label: 'name'
+					},
+					form: {
+						<#list responses as item>
+						${item.id!}: ''<#sep>,
+						</#list>
+					},
+					form_edit: {
+						<#list responses as item>
+						${item.id!}: ''<#sep>,
+						</#list>
+					},
+					viewModel:{},
+					loading: false,
+					tableData: {},
+					rules: {
+                        <#list bean.fields as item>
+                        <#if item.required>
+                        ${item.id}: [
+							{ required: true, message: '请输入${item.title!}', trigger: 'blur' }
+						  ]<#sep>,
+                        </#if>
+                        </#list>
+					},
+					<#list bean.fields as item>
+                    <#if item.option?length gt 2 >
+                     ${item.id}Options: []<#sep>,
+                     </#if>
+                     </#list>
+		        }
+		};
+		var vm = new Vue(config);
+
+	</script>
+
+</body>
+
+</html>

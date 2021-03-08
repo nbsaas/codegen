@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>${bean.update!"更新"}</title>
+	[#include "/admin/common/commons.html"]
+	[#include "/tenant/common/site.html"]
+	[@baseHead /]
+</head>
+
+<body class="hold-transition skin-blue sidebar-mini">
+<!-- Site wrapper -->
+<div class="wrapper">
+
+	<header class="main-header">
+		<!-- Header Navbar: style can be found in header.less -->
+		[#include "/admin/common/nav.html"]
+	</header>
+
+	<!-- =============================================== -->
+
+	<!-- Left side column. contains the sidebar -->
+	<aside class="main-sidebar">
+		<!-- sidebar: style can be found in sidebar.less -->
+		<section class="sidebar">
+			[@user_panel /]
+			<!-- search form -->
+			[@sidebar_form /]
+			<!-- /.search form -->
+			<!-- sidebar menu: : style can be found in sidebar.less -->
+			<ul class="sidebar-menu" data-widget="tree">
+				<li class="header">主面板</li>
+				[@menustag id=1]
+				[#list list as item]
+				[@menu item "${menus!''}"]
+				[/@menu]
+				[/#list]
+				[/@menustag]
+			</ul>
+		</section>
+		<!-- /.sidebar -->
+	</aside>
+
+	<!-- =============================================== -->
+
+	<!-- Content Wrapper. Contains page content -->
+	<div class="content-wrapper" id="app"   v-cloak >
+		<!-- Content Header (Page header) -->
+		<section class="content-header">
+			<!-- 导航 -->
+			<div class="navigation">
+				<i>首页</i> <span>${bean.update!"更新"}</span>
+			</div>
+		</section>
+		<!-- Main content -->
+		<section class="content">
+			<!-- Default box -->
+
+			<el-form ref="form" :model="form" label-width="160px" :rules="rules"  >
+				<input type="hidden" name="id" value="<#noparse>${model.id}</#noparse>">
+				<input type="hidden" name="pageNumber" value="<#noparse>${(page.pageNumber)!'1'}</#noparse>">
+				<el-row :gutter="10">
+					<#list bean.fields as item>
+					<el-col :span="12">
+						<el-form-item label="${item.title!}" size="mini" prop="${item.id!}">
+							<#if item.type='date'>
+							<el-date-picker v-model="form.${item.id!}" type="date" placeholder="选择日期">
+							</el-date-picker>
+							<#elseif item.type='select'>
+							<el-select style="width: 100%;"  v-model="form.${item.id!}" filterable clearable
+									   placeholder="请选择">
+								<el-option v-for="item in ${item.option!}Options" :key="item.id"
+										   :label="item.name" :value="item.id">
+								</el-option>
+							</el-select>
+							<#elseif item.type='textarea'>
+							<el-input v-model="form.${item.id!}" name="${item.id!}" type="textarea"></el-input>
+							<#elseif item.type='el_input_number'>
+							<el-input-number v-model="form.${item.id!}" name="${item.id!}" type="textarea" :min="0" :max="100"></el-input-number>
+							<#elseif item.type='el_cascader'>
+							<el-cascader
+									v-model="form.${item.id!}"
+									:options="options"
+									@change="handleChange"></el-cascader>
+							<#elseif item.type='el_switch'>
+							<el-switch
+									v-model="form.${item.id!}"
+									active-color="#13ce66"
+									inactive-color="#ff4949">
+							</el-switch>
+							<#elseif item.type='el_slider'>
+							<el-slider v-model="form.${item.id!}"></el-slider>
+							<#elseif item.type='el_rate'>
+							<el-rate v-model="form.${item.id!}"></el-rate>
+							<#elseif item.type='el_radio_group'>
+							<el-radio v-model="form.${item.id!}" label="1">备选项</el-radio>
+							<el-radio v-model="form.${item.id!}" label="2">备选项</el-radio>
+							<#elseif item.type='el_checkbox_group'>
+							<el-checkbox-group v-model="form.${item.id!}">
+								<el-checkbox label="复选框 A"></el-checkbox>
+								<el-checkbox label="复选框 B"></el-checkbox>
+								<el-checkbox label="复选框 C"></el-checkbox>
+							</el-checkbox-group>
+							<#elseif item.type='el_upload'>
+							<avatar  v-model="form.${item.id!}"  ></avatar>
+							<#else>
+							<el-input v-model="form.${item.id!}" name="${item.id!}">
+							</el-input>
+						</#if>
+						</el-form-item>
+					</el-col>
+				</#list>
+				</el-row>
+				<el-row style="text-align: right;">
+					<el-row style="text-align: right;">
+						<el-button @click="cancelEdit">取消</el-button>
+						<el-button type="primary" @click="updateData">确定</el-button>
+					</el-row>
+				</el-row>
+			</el-form>
+
+			<!-- /.box -->
+		</section>
+
+		<!-- /.content -->
+	</div>
+	<!-- /.content-wrapper -->
+
+	[#include "/admin/common/footer.html"]
+
+	<!-- Control Sidebar -->
+	[#include "/admin/common/aside.html"]
+
+	<!-- /.control-sidebar -->
+	<!-- Add the sidebar's background. This div must be placed
+     immediately after the control sidebar -->
+	<div class="control-sidebar-bg"></div>
+</div>
+<!-- ./wrapper -->
+[@baseScript /]
+<script>
+		var vm = new Vue({
+			el: '#app',
+			data: function () {
+				return {
+					form: {
+					     id:"<#noparse>${model.id</#noparse>!}",
+					    <#list bean.fields as item>
+						${item.id!}: '<#noparse>${model.</#noparse>${item.id!}!}'<#sep>,
+						</#list>
+					},
+					rules: {
+                        <#list bean.fields as item>
+                        <#if item.required>
+                        ${item.id}: [
+							{ required: true, message: '请输入${item.title!}', trigger: 'blur' }
+						  ]<#sep>,
+                        </#if>
+                        </#list>
+					}
+				}
+			},
+			mounted: function () {
+			},
+			methods: {
+				cancelEdit(){
+					window.location.href="<#noparse>${siteurl}</#noparse>admin/${config_entity}/view_list.htm";
+				},
+  				updateData(){
+					var self=this;
+					this.$refs["form"].validate((valid) => {
+						if (valid) {
+							self.updateDataPost();
+						} else {
+							console.log('error submit!!');
+							return false;
+						}
+					});
+				},
+				updateDataPost() {
+					var that = this, data = this.form;
+					const loading = this.$loading({
+						lock: true,
+						text: '数据修改中',
+						spinner: 'el-icon-loading',
+						background: 'rgba(0, 0, 0, 0.7)'
+					});
+
+					$.post("<#noparse>${siteurl}</#noparse>tenantRest/${config_entity}/update.htm", data, function (res) {
+						setTimeout(() => {
+							loading.close();
+						}, 300);
+						if (res.code == 0) {
+							that.modelType = 'list';
+							that.$message({
+								message: '修改数据成功',
+								type: 'success'
+							});
+							window.location.href="<#noparse>${siteurl}</#noparse>admin/${config_entity}/view_list.htm";
+						} else {
+							that.$message.error(res.msg);
+						}
+					});
+				}
+			}
+		})
+	</script>
+
+</body>
+
+</html>
